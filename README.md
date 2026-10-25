@@ -63,7 +63,7 @@ Developed as a senior capstone project by **Nathan Amend** and **Alex Lap**.
 ### 2. Start the Backend API
 ```powershell
 cd backend
-.\venv\Scripts\uvicorn.exe main:app --reload --port 8000
+./venv/Scripts/uvicorn.exe main:app --reload --port 8000
 ```
 *The FastAPI backend will automatically initialize and seed the SQLite database (`backend/detectiq.db`) with MITRE techniques, historical runs, variations, and Sigma rules.*
 *Interactive API docs are available at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs).*
@@ -80,7 +80,7 @@ npm run dev
 To connect the live external execution agent:
 ```powershell
 cd agent
-.\venv\Scripts\python.exe ExecutionAgent.py
+./venv/Scripts/python.exe ExecutionAgent.py
 ```
 *Note: If the agent is not running, the backend's built-in orchestration engine automatically executes and evaluates test cases so the UI is always fully interactive.*
 
