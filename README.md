@@ -72,7 +72,7 @@ cd backend
 **PowerShell:**
 ```powershell
 cd backend
-./venv/Scripts/uvicorn.exe main:app --reload --port 8000
+.\venv\Scripts\uvicorn.exe main:app --reload --port 8000
 ```
 
 *The FastAPI backend will automatically initialize and seed the SQLite database (`backend/detectiq.db`) with MITRE techniques, historical runs, variations, and Sigma rules.*
@@ -98,7 +98,7 @@ cd agent
 **PowerShell:**
 ```powershell
 cd agent
-./venv/Scripts/python.exe ExecutionAgent.py
+.\venv\Scripts\python.exe ExecutionAgent.py
 ```
 *Note: If the agent is not running, the backend's built-in orchestration engine automatically executes and evaluates test cases so the UI is always fully interactive.*
 
