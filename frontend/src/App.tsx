@@ -88,11 +88,11 @@ const DEFAULT_RUNS: RunLog[] = [
 ];
 
 const DEFAULT_VARIATIONS: Variation[] = [
-  { id: "VAR-AI-003", techniqueId: "T1059.001", method: "LLM",    description: "IEX with split string concat to avoid keyword matching",        status: "pending_review", source: "llm",    llmPrompt: "Generate a PowerShell execution variant that avoids AMSI detection using string concatenation only. No external downloads." },
-  { id: "VAR-AI-002", techniqueId: "T1003.001", method: "LLM",    description: "NanoDump via reflective load — alternate syscall chain",          status: "approved",       source: "llm",    llmPrompt: "Produce an LSASS dump variant using a reflective loader that avoids direct OpenProcess calls." },
-  { id: "VAR-MAN-007",techniqueId: "T1059.001", method: "Manual", description: "EncodedCommand flag with Base64 payload",                         status: "approved",       source: "manual" },
-  { id: "VAR-MAN-006",techniqueId: "T1003.001", method: "Manual", description: "comsvcs.dll MiniDump via rundll32",                               status: "approved",       source: "manual" },
-  { id: "VAR-AI-001", techniqueId: "T1078",     method: "LLM",    description: "RDP auth with renamed built-in account — rule only checks 'Admin'",status: "rejected",       source: "llm",    llmPrompt: "Vary the account name used in a valid-accounts RDP login to evade name-based rules." },
+  { id: "VAR-003", techniqueId: "T1059.001", method: "Rule-Based", description: "IEX with split string concat to avoid keyword matching",        status: "pending_review", source: "rule_based", strategy: "String Concatenation & Env Expansion" },
+  { id: "VAR-002", techniqueId: "T1003.001", method: "Rule-Based", description: "NanoDump via reflective load — alternate syscall chain",          status: "approved",       source: "rule_based", strategy: "Reflective Loader / Forked Handle" },
+  { id: "VAR-MAN-007",techniqueId: "T1059.001", method: "Manual",     description: "EncodedCommand flag with Base64 payload",                         status: "approved",       source: "manual" },
+  { id: "VAR-MAN-006",techniqueId: "T1003.001", method: "Manual",     description: "comsvcs.dll MiniDump via rundll32",                               status: "approved",       source: "manual" },
+  { id: "VAR-001", techniqueId: "T1078",     method: "Rule-Based", description: "RDP auth with renamed built-in account — rule only checks 'Admin'",status: "rejected",       source: "rule_based", strategy: "Account Parameter Substitution" },
 ];
 
 const DEFAULT_BLINDSPOTS: BlindSpot[] = [
@@ -208,7 +208,7 @@ export default function App() {
             { label: "Detection Coverage", value: `${matrixData.coveragePct}%`, sub: `${matrixData.hitCells}/${matrixData.totalCells} test cells detected`, accent: true },
             { label: "ATT&CK Techniques", value: `${techniques.length}`, sub: "8–12 target scope" },
             { label: "Open Blind Spots", value: `${blindspots.filter(b => b.status === "open").length}`, sub: `${blindspots.filter(b => b.status === "patched").length} patched this cycle` },
-            { label: "AI Variants Generated", value: `${variations.filter(v => v.source === "llm").length}`, sub: "Evasion variants active" },
+            { label: "Evasion Variations", value: `${variations.length}`, sub: "Evasion variants active" },
           ].map(s => (
             <div key={s.label} className="bg-zinc-950 px-5 py-4">
               <div className="text-[10px] font-mono uppercase tracking-widest text-zinc-600 mb-1">{s.label}</div>
@@ -276,7 +276,7 @@ export default function App() {
                 { layer: "Storage",    components: ["SQLite / PostgreSQL Relational DB"] },
                 { layer: "Telemetry",  components: ["Sysmon EID 1/3/11/13", "WinEvent"] },
                 { layer: "Detection",  components: ["Sigma Rules", "Wazuh SIEM"] },
-                { layer: "AI Engine",  components: ["DetectIQ Variation Generator"] },
+                { layer: "Variations", components: ["Heuristic Engine", "Obfuscation Rules"] },
                 { layer: "Agent",      components: ["ExecutionAgent", "Sandbox"] },
               ].map(l => (
                 <div key={l.layer} className="flex items-start gap-3">
@@ -348,7 +348,7 @@ export default function App() {
               { d: "D4", label: "Initial Coverage Eval",  date: "10/30/26", done: true  },
               { d: "D5", label: "Blind-Spot Analysis",    date: "11/13/26", done: false },
               { d: "D6", label: "Improvement Validation", date: "11/20/26", done: false },
-              { d: "D7", label: "AI Variation Prototype", date: "11/27/26", done: true  },
+              { d: "D7", label: "Variation Prototype", date: "11/27/26", done: true  },
               { d: "D8", label: "Final Framework",        date: "12/04/26", done: false },
             ].map(m => (
               <div key={m.d} className={`border p-3 ${m.done ? "border-[#00d4aa]/30 bg-[#00d4aa]/5" : "border-zinc-800"}`}>
@@ -532,37 +532,56 @@ export default function App() {
 
   // 3. Variations View
   function VariationsView() {
-    const [prompt, setPrompt] = useState("");
+    const [strategy, setStrategy] = useState("");
+    const [method, setMethod] = useState("Rule-Based Obfuscation");
     const [techId, setTechId] = useState("T1059.001");
     const [generating, setGenerating] = useState(false);
 
-    const PRESET_PROMPTS: Record<string, string[]> = {
+    const PRESET_STRATEGIES: Record<string, string[]> = {
       "T1059.001": [
-        "Avoid AMSI keyword scanning using split string concatenation without web downloads",
-        "Base64 encoded command line with obfuscated parameters",
-        "Unmanaged runspace execution inside host DLL"
+        "String Concatenation & Env Expansion",
+        "Base64 Obfuscation & Flag Formatting",
+        "Unmanaged Runspace Execution"
       ],
       "T1003.001": [
-        "NanoDump reflective loader avoiding direct OpenProcess API call",
-        "MiniDump via comsvcs.dll ordinal #24 without Mimikatz",
-        "Direct NT syscall invocation bypassing userland EDR hooks"
+        "Reflective Loader / Forked Handle",
+        "LOLBin Ordinal Invocation (#24)",
+        "Direct NT Syscall Invocations"
       ],
       "T1055.012": [
-        "Early Bird APC injection into suspended svchost.exe",
-        "Section unmapping hollowing into spoolsv.exe"
+        "Early Bird APC Injection",
+        "Section Unmapping & Injection"
       ],
       "T1078": [
-        "Rename built-in default guest account to evade 'Admin' pattern matching",
-        "WinRM Kerberos ticket pass-through authentication"
+        "Account Parameter Substitution",
+        "WinRM Kerberos Ticket Passthrough"
+      ],
+      "T1021.001": [
+        "Encrypted Port-Forward Tunneling"
+      ],
+      "T1027.002": [
+        "Header Scrambling & Strip Overlays"
+      ],
+      "T1082": [
+        "CIM/WMI API Invocation"
+      ],
+      "T1105": [
+        "RFC 2397 Data URI Encoding"
+      ],
+      "T1569.002": [
+        "Service Masquerading"
+      ],
+      "T1136.001": [
+        "ADSI COM Object Invocation"
       ]
     };
 
     const handleGen = async () => {
       setGenerating(true);
       try {
-        const variant = await api.generateVariation(techId, prompt);
+        const variant = await api.generateVariation(techId, strategy, method);
         showToast(`Generated variant ${variant.id}! Added to repository for review.`);
-        setPrompt("");
+        setStrategy("");
         await refreshAllData();
       } catch (err: any) {
         showToast(err.message || "Failed to generate variation", "error");
@@ -606,7 +625,7 @@ export default function App() {
 
         {/* Input panel */}
         <div className="border border-zinc-800 p-5 bg-zinc-950">
-          <div className="text-[10px] font-mono uppercase tracking-widest text-zinc-600 mb-3">AI Variation Generator</div>
+          <div className="text-[10px] font-mono uppercase tracking-widest text-zinc-600 mb-3">Adversarial Variation Generator</div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
             <div>
               <label className="text-[10px] font-mono text-zinc-600 uppercase tracking-wide block mb-1.5">Base Technique</label>
@@ -621,35 +640,41 @@ export default function App() {
               </select>
             </div>
             <div>
-              <label className="text-[10px] font-mono text-zinc-600 uppercase tracking-wide block mb-1.5">Method</label>
-              <select className="w-full bg-zinc-900 border border-zinc-700 text-zinc-300 font-mono text-[12px] px-3 py-2 focus:outline-none focus:border-[#00d4aa]">
-                <option>LLM Prompt Guidance</option>
-                <option>Autonomous Evasion Heuristic</option>
+              <label className="text-[10px] font-mono text-zinc-600 uppercase tracking-wide block mb-1.5">Evasion Method</label>
+              <select
+                value={method}
+                onChange={e => setMethod(e.target.value)}
+                className="w-full bg-zinc-900 border border-zinc-700 text-zinc-300 font-mono text-[12px] px-3 py-2 focus:outline-none focus:border-[#00d4aa]"
+              >
+                <option value="Rule-Based Obfuscation">Rule-Based Obfuscation</option>
+                <option value="LOLBin Substitution">LOLBin Substitution</option>
+                <option value="Reflective / Memory Injection">Reflective / Memory Injection</option>
+                <option value="Protocol / Parameter Alternate">Protocol / Parameter Alternate</option>
               </select>
             </div>
             <div>
-              <label className="text-[10px] font-mono text-zinc-600 uppercase tracking-wide block mb-1.5">LLM Prompt / Evasion Goals</label>
+              <label className="text-[10px] font-mono text-zinc-600 uppercase tracking-wide block mb-1.5">Strategy / Parameters</label>
               <input
-                value={prompt}
-                onChange={e => setPrompt(e.target.value)}
-                placeholder="e.g. avoid direct syscalls, use LOLBins only..."
+                value={strategy}
+                onChange={e => setStrategy(e.target.value)}
+                placeholder="e.g. split string concat, ordinal #24, forked handle..."
                 className="w-full bg-zinc-900 border border-zinc-700 text-zinc-300 font-mono text-[12px] px-3 py-2 placeholder-zinc-700 focus:outline-none focus:border-[#00d4aa]"
               />
             </div>
           </div>
 
-          {/* Quick Preset Prompts */}
-          {PRESET_PROMPTS[techId] && (
+          {/* Quick Preset Strategies */}
+          {PRESET_STRATEGIES[techId] && (
             <div className="mb-4">
               <span className="text-[10px] font-mono text-zinc-600 mr-2 uppercase">Presets:</span>
               <div className="flex flex-wrap gap-2 mt-1.5">
-                {PRESET_PROMPTS[techId].map((p, i) => (
+                {PRESET_STRATEGIES[techId].map((s, i) => (
                   <button
                     key={i}
-                    onClick={() => setPrompt(p)}
+                    onClick={() => setStrategy(s)}
                     className="text-[10px] font-mono bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-[#00d4aa] hover:border-[#00d4aa]/40 px-2 py-1 text-left transition-colors"
                   >
-                    "{p}"
+                    "{s}"
                   </button>
                 ))}
               </div>
@@ -663,10 +688,10 @@ export default function App() {
               className="border border-[#00d4aa] text-[#00d4aa] font-mono text-[11px] px-4 py-2 uppercase tracking-wide hover:bg-[#00d4aa]/10 transition-colors disabled:opacity-40 flex items-center gap-2"
             >
               {generating && <span className="w-2 h-2 rounded-full bg-[#00d4aa] animate-ping" />}
-              {generating ? "Synthesizing Variant via LLM..." : "Generate via LLM"}
+              {generating ? "Generating Variant..." : "Generate Evasion Variant"}
             </button>
             <span className="text-[10px] font-mono text-zinc-600">
-              Req 7: All AI-generated variants require manual validation before execution.
+              Req 7: All generated evasion variants require manual validation before execution.
             </span>
           </div>
         </div>
@@ -691,7 +716,10 @@ export default function App() {
                   <td className="px-4 py-3 font-mono text-[11px] text-zinc-500">{v.id}</td>
                   <td className="px-4 py-3 font-mono text-[12px] text-[#00d4aa]">{v.techniqueId}</td>
                   <td className="px-4 py-3">
-                    <Badge label={v.source === "llm" ? "LLM" : "Manual"} color={v.source === "llm" ? "blue" : "zinc"} />
+                    <Badge
+                      label={v.source === "manual" ? "Manual" : "Rule-Based"}
+                      color={v.source === "manual" ? "zinc" : "blue"}
+                    />
                   </td>
                   <td className="px-4 py-3 text-[12px] text-zinc-300 max-w-md">
                     <div>{v.description}</div>

@@ -41,7 +41,8 @@ export interface Variation {
   method: string;
   description: string;
   status: "pending_review" | "approved" | "rejected";
-  source: "manual" | "llm";
+  source: "manual" | "rule_based" | string;
+  strategy?: string;
   llmPrompt?: string;
   payload?: string;
   createdAt?: string;
@@ -83,7 +84,8 @@ export interface DashboardStats {
   hitCells: number;
   techniquesCount: number;
   openBlindSpots: number;
-  aiVariantsGenerated: number;
+  variantsGenerated?: number;
+  aiVariantsGenerated?: number;
   agentConnected: boolean;
   recentRuns: RunLog[];
 }
@@ -142,11 +144,11 @@ export async function fetchVariations(techniqueId?: string): Promise<Variation[]
   return res.json();
 }
 
-export async function generateVariation(baseTechnique: string, prompt: string): Promise<Variation> {
+export async function generateVariation(baseTechnique: string, strategy: string = "", method: string = "Rule-Based"): Promise<Variation> {
   const res = await fetch(`${API_BASE}/variations/generate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ baseTechnique, prompt })
+    body: JSON.stringify({ baseTechnique, strategy, prompt: strategy, method })
   });
   if (!res.ok) throw new Error("Failed to generate variation");
   const data = await res.json();

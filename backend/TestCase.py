@@ -10,6 +10,7 @@ class TestCase(BaseModel):
     variant: str = "Base"
     variantId: Optional[str] = None
     payloadExecutionString: str
+    isVariation: bool = False
     isAIVariation: bool = False
     executionTimestamp: Optional[datetime] = None
     alertGenerated: Optional[bool] = None

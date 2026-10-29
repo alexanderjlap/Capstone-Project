@@ -43,8 +43,9 @@ class ExecutePayload(BaseModel):
 
 class VariationGeneratePayload(BaseModel):
     baseTechnique: str
+    strategy: Optional[str] = ""
     prompt: Optional[str] = ""
-    method: Optional[str] = "LLM"
+    method: Optional[str] = "Rule-Based"
 
 class VariationStatusPayload(BaseModel):
     status: str # "approved" | "rejected" | "pending_review"
@@ -79,7 +80,7 @@ def get_dashboard_stats():
     blind_spots = orchestrator.getBlindSpots()
     open_blind_spots = sum(1 for b in blind_spots if b["status"] == "open")
     variations = variation_engine.listVariations()
-    ai_variants = sum(1 for v in variations if v["source"] == "llm")
+    variants_count = len(variations)
     runs = orchestrator.getRunsLog()
 
     agent_active = False
@@ -93,7 +94,8 @@ def get_dashboard_stats():
         "hitCells": matrix_info["hitCells"],
         "techniquesCount": len(matrix_info["matrix"]),
         "openBlindSpots": open_blind_spots,
-        "aiVariantsGenerated": ai_variants,
+        "variantsGenerated": variants_count,
+        "aiVariantsGenerated": variants_count,
         "agentConnected": agent_active,
         "recentRuns": runs[:10]
     }
@@ -189,7 +191,8 @@ def get_variations(techniqueId: Optional[str] = None):
 
 @app.post("/api/variations/generate")
 def generate_variations(payload: VariationGeneratePayload):
-    variant = variation_engine.generateVariations(payload.baseTechnique, payload.prompt or "")
+    strategy_param = payload.strategy or payload.prompt or ""
+    variant = variation_engine.generateVariations(payload.baseTechnique, strategy=strategy_param, method=payload.method)
     return {"message": "Success", "variant": variant}
 
 @app.post("/api/variations/{variation_id}/status")

@@ -50,7 +50,8 @@ class TestOrchestrator:
             variant=variant,
             variantId=variantID,
             payloadExecutionString=payload,
-            isAIVariation=("VAR-AI" in (variantID or "") or "VAR-" in variant),
+            isVariation=("VAR-" in (variantID or "") or "VAR-" in variant),
+            isAIVariation=("VAR-" in (variantID or "") or "VAR-" in variant),
             commandLine=payload
         )
         self.activeTestQueue.append(test)

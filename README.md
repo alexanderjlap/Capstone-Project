@@ -13,7 +13,7 @@ Developed as a senior capstone project by **Nathan Amend** and **Alex Lap**.
    - High-resolution Sysmon telemetry logging (EID 1 Process Create, EID 3 Network Connect, EID 11 File Create, EID 13 Registry Set).
    - Real-time SIEM alert evaluation and latency measurements.
 
-2. **AI Variation Generation (UC-2)**:
+2. **Adversarial Variation Generation (UC-2)**:
    - Automated generation of novel adversarial evasion variants (AMSI bypasses, unhooked syscalls, reflective loaders, obfuscation, LOLBins).
    - Human-in-the-loop validation (Approve/Reject) with direct execution scheduling.
 
@@ -115,7 +115,7 @@ When you open **[http://localhost:5173](http://localhost:5173)**, you'll enter t
    - **Detection Coverage**: Initial baseline percentage (e.g. `46%`).
    - **ATT&CK Techniques**: Number of monitored techniques (10).
    - **Open Blind Spots**: Known detection gaps.
-   - **AI Variants Generated**: Number of generated evasion variants in the repository.
+   - **Evasion Variations**: Number of generated evasion variants in the repository.
 3. In the **Recent Executions** table, click on any run row:
    - Look at the **Telemetry Breakdown** card below it to inspect the exact Sysmon counts (`EID 1` Process, `EID 3` Network, `EID 11` File, `EID 13` Registry) and the simulated adversarial command line.
 
@@ -136,12 +136,12 @@ When you open **[http://localhost:5173](http://localhost:5173)**, you'll enter t
 
 ---
 
-### Step 3: Generate AI Evasion Variants (Variations · UC-2)
+### Step 3: Generate Evasion Variants (Variations · UC-2)
 1. Click **"Variations"** (`UC-2`) in the sidebar.
 2. Choose a **Base Technique** (e.g. `T1059.001 — PowerShell` or `T1003.001 — LSASS Memory`).
-3. Either enter a custom evasion goal in **LLM Prompt / Evasion Goals** or click one of the quick **Preset** buttons (e.g. *"Avoid AMSI keyword scanning using split string concatenation"*).
-4. Click **"Generate via LLM"**:
-   - The AI Variation Engine generates a realistic evasion payload tailored to that technique.
+3. Select an evasion method (Rule-Based Obfuscation, LOLBin Substitution, Reflective Injection) and specify custom strategy parameters or click one of the quick **Preset** buttons (e.g. *"String Concatenation & Env Expansion"*).
+4. Click **"Generate Evasion Variant"**:
+   - The Variation Engine generates a realistic evasion payload tailored to that technique.
    - The variant appears immediately at the top of the **Variation Repository** table with status `pending_review`.
 5. Human-in-the-Loop Review:
    - Click **"Approve"** on the variant.
@@ -182,7 +182,7 @@ When you open **[http://localhost:5173](http://localhost:5173)**, you'll enter t
 | `GET` | `/api/runs` | List test execution logs |
 | `POST` | `/api/runs/execute` | Queue and execute test cases |
 | `GET` | `/api/variations` | Query variation repository |
-| `POST` | `/api/variations/generate` | Generate AI evasion variant |
+| `POST` | `/api/variations/generate` | Generate evasion variant |
 | `POST` | `/api/variations/{id}/status`| Approve or reject variation |
 | `GET` | `/api/blindspots` | Retrieve open & patched blind spots |
 | `POST` | `/api/detections/reevaluate` | Re-evaluate rules against baselines |

