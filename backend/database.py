@@ -42,6 +42,12 @@ def init_db():
     )
     """)
 
+    # Migration check: Ensure strategy_params column exists on existing variations table
+    cur.execute("PRAGMA table_info(variations)")
+    cols = [row["name"] for row in cur.fetchall()]
+    if "strategy_params" not in cols:
+        cur.execute("ALTER TABLE variations ADD COLUMN strategy_params TEXT")
+
     # Execution Runs log table
     cur.execute("""
     CREATE TABLE IF NOT EXISTS runs_log (
