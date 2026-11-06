@@ -7,7 +7,7 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../backend")))
 
 from database import init_db, get_connection
-from TestOrchestrator import TestOrchestrator
+from TestOrchestrator import TestOrchestrator, VariationNotApprovedError
 from VariationEngine import VariationEngine
 from SIEMPoller import SIEMPoller
 from TestCase import TestCase
@@ -100,13 +100,52 @@ def test_req7_verify_rejected_variation_is_never_run():
     conn.close()
     assert row["status"] == "rejected"
 
-def test_req7_verify_unapproved_variation_cannot_be_executed():
-    """Verify pending variations require approval before execution."""
+def test_req7_verify_unapproved_variation_cannot_be_executed(monkeypatch):
+    """Verifies variations. Unit-level: varition status mocked since unit tests use mock data."""
+    from TestOrchestrator import VariationNotApprovedError
+    orchestrator = TestOrchestrator()
+
+    #pending_review-> blocked with 403
+    monkeypatch.setattr(orchestrator.variation_engine, "getStatus", lambda var_id: "pending_review")
+    with pytest.raises(VariationNotApprovedError) as pending_exc:
+        orchestrator._assertVariationExecutable("VAR-MOCK-PENDING")
+    assert pending_exc.value.status_code == 403
+
+    #rejected-> blocked with 403
+    monkeypatch.setattr(orchestrator.variation_engine, "getStatus", lambda var_id: "rejected")
+    with pytest.raises(VariationNotApprovedError) as rejected_exc:
+        orchestrator._assertVariationExecutable("VAR-MOCK-REJECTED")
+
+    #unknown id-> blocked with 404
+    monkeypatch.setattr(orchestrator.variation_engine, "getStatus", lambda var_id: None)
+    with pytest.raises(VariationNotApprovedError) as missing_exc:
+        orchestrator._assertVariationExecutable("VAR-MOCK-MISSING")
+    assert missing_exc.value.status_code == 404
+
+    #approved-> allowed
+    monkeypatch.setattr(orchestrator.variation_engine, "getStatus", lambda var_id: "approved")
+    orchestrator._assertVariationExecutable("VAR-MOCK-APPROVED")
+
+def test_req7_unapproved_variation_cannot_be_exected_real_data():
+    """Req 7 with real data: generates variation in db then run through initializetestrun."""
     engine = VariationEngine()
-    var = engine.generateVariations("T1003.001", strategy="Reflective Loader")
+    orchestrator = TestOrchestrator()
+
+    var = engine.generateVariations("T1059.001", strategy="String Concatenation")
+    var_id = var["id"]
     assert var["status"] == "pending_review"
-    # Approval step
-    assert engine.updateStatus(var["id"], "approved") is True
+
+    with pytest.raises(VariationNotApprovedError) as pending_exc:
+        orchestrator.initializeTestRun("T1059.001", variant="VAR-1", variantID=var_id)
+    assert pending_exc.value.status_code == 403
+
+    assert engine.updateStatus(var_id, "rejected") is True
+    with pytest.raises(VariationNotApprovedError) as rejected_exc:
+        orchestrator.initializeTestRun("T1059.001", variant="VAR-1", variantID=var_id)
+    
+    assert engine.updateStatus(var_id, "approved") is True
+    test_id = orchestrator.initializeTestRun("T1059.001", variant="VAR-1", variantID=var_id)
+    assert test_id
 
 # --- Requirement 8: Coverage Matrix & Dataset Export ---
 def test_req8_verify_export_contains_technique_time_result_and_latency():
