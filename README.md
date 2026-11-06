@@ -57,31 +57,46 @@ Developed as a senior capstone project by **Nathan Amend** and **Alex Lap**.
 ## 🚀 Getting Started
 
 ### 1. Prerequisites
-- **Python 3.10+** (with virtual environment configured)
+- **Python 3.10+**
 - **Node.js 18+** & npm
 
-### 2. Start the Backend API
+### 2. Setup & Start the Backend API
 In your first terminal (from the project root):
 
-**Git Bash (`MINGW64`):**
-```bash
-cd backend
-./venv/Scripts/uvicorn.exe main:app --reload --port 8000
-```
-
-**PowerShell:**
+**First-Time Setup (Virtual Environment & Dependencies):**
 ```powershell
 cd backend
+python -m venv venv
+.\venv\Scripts\pip.exe install -r requirements.txt
+```
+*(On Git Bash / Linux / macOS, use `python3 -m venv venv` and `./venv/Scripts/pip install -r requirements.txt` or `./venv/bin/pip install -r requirements.txt`)*
+
+**Run the Backend Server:**
+```powershell
+# PowerShell
+cd backend
 .\venv\Scripts\uvicorn.exe main:app --reload --port 8000
+```
+```bash
+# Git Bash
+cd backend
+./venv/Scripts/uvicorn.exe main:app --reload --port 8000
 ```
 
 *The FastAPI backend will automatically initialize and seed the SQLite database (`backend/detectiq.db`) with MITRE techniques, historical runs, variations, and Sigma rules.*
 *Interactive API docs are available at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs).*
 
-### 3. Start the Frontend Application
+### 3. Setup & Start the Frontend Application
 In a second terminal:
+
+**First-Time Setup (Install Dependencies):**
 ```bash
 cd frontend
+npm install
+```
+
+**Run the Development Server:**
+```bash
 npm run dev
 ```
 *Open [http://localhost:5173](http://localhost:5173) in your browser.*
@@ -89,18 +104,37 @@ npm run dev
 ### 4. (Optional) Run the Windows Execution Agent
 To connect the live external execution agent:
 
-**Git Bash (`MINGW64`):**
-```bash
+**First-Time Setup:**
+```powershell
 cd agent
-./venv/Scripts/python.exe ExecutionAgent.py
+python -m venv venv
+.\venv\Scripts\pip.exe install -r requirements.txt
 ```
 
-**PowerShell:**
+**Run the Agent:**
 ```powershell
+# PowerShell
 cd agent
 .\venv\Scripts\python.exe ExecutionAgent.py
 ```
+```bash
+# Git Bash
+cd agent
+./venv/Scripts/python.exe ExecutionAgent.py
+```
 *Note: If the agent is not running, the backend's built-in orchestration engine automatically executes and evaluates test cases so the UI is always fully interactive.*
+
+### 5. Running Automated Tests & Generating Reports
+To verify requirements and generate professor-facing HTML test reports:
+```powershell
+# PowerShell
+.\tests\run_tests.ps1 all
+```
+```bash
+# Git Bash
+./tests/run_tests.sh all
+```
+*(See [tests/README.md](tests/README.md) for full requirement mapping and test details).*
 
 ---
 

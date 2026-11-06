@@ -27,7 +27,8 @@ As outlined in the Test Plan, **Unit Tests** and **System Tests** share the exac
 - **Req 5**: `test_req5_verify_coverage_equals_detected_divided_by_executed` — Confirms coverage formula equals detected cells divided by total tested cells.
 - **Req 6**: `test_req6_verify_variation_response_saved_as_pending` — Confirms new variations are saved as `pending_review`.
 - **Req 7**: `test_req7_verify_rejected_variation_is_never_run` — Confirms rejected variations cannot be executed.
-- **Req 7**: `test_req7_verify_unapproved_variation_cannot_be_executed` — Enforces approval gating.
+- **Req 7**: `test_req7_verify_unapproved_variation_cannot_be_executed` — Enforces approval gating with mocked statuses.
+- **Req 7**: `test_req7_unapproved_variation_cannot_be_executed_real_data` — Enforces approval gating with live database transitions.
 - **Req 8**: `test_req8_verify_export_contains_technique_time_result_and_latency` — Verifies log export integrity.
 
 ### 2. System Tests (`tests/system/test_system_requirements.py`)
@@ -37,6 +38,7 @@ As outlined in the Test Plan, **Unit Tests** and **System Tests** share the exac
 - **ST-4 (Req 4)**: `test_st4_req4_automated_suite_execution_through_api` — Automates execution over API with no manual steps.
 - **ST-5 (Req 5)**: `test_st5_req5_run_variations_and_verify_coverage` — Runs variations across multiple techniques and updates matrix coverage.
 - **ST-6 (Req 6 & 7)**: `test_st6_req6_req7_generate_and_enforce_approval_workflow` — Generates variant, tests `Pending` state and approval transition.
+- **ST-6b (Req 7)**: `test_st6b_req7_unapproved_variation_execution_is_blocked` — Verifies live API execution endpoint blocks pending variations with HTTP 403.
 - **ST-7 (Req 8)**: `test_st7_req8_verify_dataset_and_coverage_matrix` — Verifies dataset exports and matrix match the active database.
 
 ---

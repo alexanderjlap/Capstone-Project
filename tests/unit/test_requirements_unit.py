@@ -126,7 +126,7 @@ def test_req7_verify_unapproved_variation_cannot_be_executed(monkeypatch):
     monkeypatch.setattr(orchestrator.variation_engine, "getStatus", lambda var_id: "approved")
     orchestrator._assertVariationExecutable("VAR-MOCK-APPROVED")
 
-def test_req7_unapproved_variation_cannot_be_exected_real_data():
+def test_req7_unapproved_variation_cannot_be_executed_real_data():
     """Req 7 with real data: generates variation in db then run through initializetestrun."""
     engine = VariationEngine()
     orchestrator = TestOrchestrator()

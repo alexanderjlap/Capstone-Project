@@ -169,14 +169,6 @@ def execute_test_cases(payload: Union[ExecutePayload, List[str]]):
             raise HTTPException(status_code=e.status_code, detail=str(e))
         results.append({"technique": tech_id, "testID": test_id, "status": "QUEUED"})
 
-        test_id = orchestrator.initializeTestRun(
-            techniqueID=tech_id,
-            variant=variant,
-            variantID=variant_id,
-            custom_payload=custom_payload
-        )
-        results.append({"technique": tech_id, "testID": test_id, "status": "QUEUED"})
-
         # If autoExecute is true and agent hasn't polled within 15 seconds,
         # execute synchronously so user gets real immediate data feedback
         agent_is_active = False
