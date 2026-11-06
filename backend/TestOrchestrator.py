@@ -2,12 +2,20 @@ from typing import List, Dict, Optional, Any
 from TestCase import TestCase
 from SIEMPoller import SIEMPoller
 from database import get_connection
+from VariationEngine import VariationEngine
 import uuid
 import datetime
+
+class VariationNotApprovedError(Exception):
+    #if a run targets a variation not approved
+    def __init__(self, message: str, status_code: int = 403):
+        super().__init__(message)
+        self.status_code = status_code
 
 class TestOrchestrator:
     def __init__(self):
         self.siem_poller = SIEMPoller()
+        self.variation_engine = VariationEngine()
         self.activeTestQueue: List[TestCase] = []
         self.agent_last_seen: Optional[datetime.datetime] = None
 
@@ -29,7 +37,22 @@ class TestOrchestrator:
                 pass
         return f"RUN-{max_num + 1:03d}"
 
+    def _assertVariationExecutable(self, variantID: str) -> None:
+        #Req 7 enforcement
+        status = self.variation_engine.getStatus(variantID)
+        if status is None:
+            raise VariationNotApprovedError(
+                f"Variation ID {variantID} not found", status_code=404
+            )
+        if status != "approved":
+            raise VariationNotApprovedError(
+                f"Variation ID {variantID} is '{status}' - only approved variations can be executed", status_code=403,
+            )
+
     def initializeTestRun(self, techniqueID: str, variant: str = "Base", variantID: str = None, custom_payload: str = None) -> str:
+        if variantID:
+            self._assertVariationExecutable(variantID)
+
         test_id = str(uuid.uuid4())
         run_id = self.getNextRunId()
 

@@ -1,6 +1,7 @@
 import uuid
 import datetime
 from database import get_connection
+from typing import Optional
 
 TECHNIQUE_VARIANTS_KNOWLEDGE = {
     "T1059.001": [
@@ -214,3 +215,11 @@ class VariationEngine:
         conn.commit()
         conn.close()
         return affected > 0
+
+    def getStatus(self, var_id: str) -> Optional[str]:
+        conn = get_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT status FROM variations WHERE id = ?", (var_id,))
+        row = cur.fetchone()
+        conn.close()
+        return row["status"] if row else None

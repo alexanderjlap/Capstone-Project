@@ -107,6 +107,39 @@ def test_st6_req6_req7_generate_and_enforce_approval_workflow():
     assert appr_resp.status_code == 200
     assert appr_resp.json()["status"] == "approved"
 
+def test_st6b_req7_unapproved_variation_execution_is_blocked():
+    """ST-6b (Req 7): execution endpoint refuses a pending variation.
+    Runs against live API and real db."""
+    gen_resp = requests.post(f"{API_BASE}/variations/generate", json={
+        "baseTechnique": "T1059.001",
+        "strategy": "String Concatenation"
+    })
+    assert gen_resp.status_code == 200
+    variant = gen_resp.json()["variant"]
+    var_id = variant["id"]
+    assert variant["status"] == "pending_review"
+
+    blocked_resp = requests.post(f"{API_BASE}/runs/execute", json={
+        "techniqueIDs": ["T1059.001"],
+        "variant": "VAR-1",
+        "variantId": var_id,
+        "autoExecute": True
+    })
+    assert blocked_resp.status_code == 403, (
+        f"Expected 403 for pending variation, got {blocked_resp.status_code}: {blocked_resp.text}"
+    )
+
+    appr_resp = requests.post(f"{API_BASE}/variations/{var_id}/status", json={"status": "approved"})
+    assert appr_resp.status_code == 200
+    allowed_resp = requests.post(f"{API_BASE}/runs/execute", json={
+        "techniqueIDs": ["T1059.001"],
+        "variant": "VAR-1",
+        "variantId": var_id,
+        "autoExecute": True
+    })
+    assert allowed_resp.status_code == 200
+    assert len(allowed_resp.json()["executed"]) > 0
+
 # --- ST-7 (Req 8): Dataset Export & Coverage Matrix Integrity ---
 def test_st7_req8_verify_dataset_and_coverage_matrix():
     """ST-7 (Req 8): Export dataset / logs and verify coverage matrix matches database."""

@@ -5,7 +5,7 @@ from pydantic import BaseModel
 import datetime
 
 from database import init_db, get_connection
-from TestOrchestrator import TestOrchestrator
+from TestOrchestrator import TestOrchestrator, VariationNotApprovedError
 from VariationEngine import VariationEngine
 from SIEMPoller import SIEMPoller
 
@@ -158,6 +158,17 @@ def execute_test_cases(payload: Union[ExecutePayload, List[str]]):
     results = []
     executed_results = []
     for tech_id in technique_ids:
+        try:
+            test_id = orchestrator.initializeTestRun(
+                techniqueID=tech_id,
+                variant=variant,
+                variantID=variant_id,
+                custom_payload=custom_payload
+            )
+        except VariationNotApprovedError as e:
+            raise HTTPException(status_code=e.status_code, detail=str(e))
+        results.append({"technique": tech_id, "testID": test_id, "status": "QUEUED"})
+
         test_id = orchestrator.initializeTestRun(
             techniqueID=tech_id,
             variant=variant,
